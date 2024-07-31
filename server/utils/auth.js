@@ -1,20 +1,16 @@
-// Importing decode function from jwt-decode library to decode JWT tokens
-import decode from 'jwt-decode';
+const jwt = require('jsonwebtoken');
+const decode = require('jwt-decode');
 
 class AuthService {
-  // Get user data from the decoded token
   getProfile() {
     return decode(this.getToken());
   }
 
-  // Check if the user is logged in
   loggedIn() {
     const token = this.getToken();
-    // If there is a token and it's not expired, return true
-    return token && !this.isTokenExpired(token) ? true : false;
+    return token && !this.isTokenExpired(token);
   }
 
-  // Check if the token is expired
   isTokenExpired(token) {
     try {
       const decoded = decode(token);
@@ -28,22 +24,24 @@ class AuthService {
     }
   }
 
-  // Retrieve token from localStorage
   getToken() {
-    return localStorage.getItem('id_token');
+    // Safely return null if localStorage is not available (server-side)
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('id_token') : null;
   }
 
-  // Save token to localStorage and reload page to homepage
   login(idToken) {
-    localStorage.setItem('id_token', idToken);
-    window.location.assign('/');
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('id_token', idToken);
+      window.location.assign('/');
+    }
   }
 
-  // Clear token from localStorage and reload page to homepage
   logout() {
-    localStorage.removeItem('id_token');
-    window.location.assign('/');
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('id_token');
+      window.location.assign('/');
+    }
   }
 }
 
-export default new AuthService();
+module.exports = new AuthService();

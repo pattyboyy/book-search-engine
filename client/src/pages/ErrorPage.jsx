@@ -4,7 +4,7 @@ import { Container, Row, Col } from 'react-bootstrap';
 
 const ErrorPage = () => {
   const error = useRouteError();
-  console.error(error);
+  console.error('Detailed error:', error);
 
   return (
     <Container className="mt-5">
@@ -15,6 +15,11 @@ const ErrorPage = () => {
           <p>
             <i>{error.statusText || error.message}</i>
           </p>
+          {error.stack && (
+            <pre style={{ textAlign: 'left', marginTop: '20px', padding: '10px', background: '#f0f0f0' }}>
+              {error.stack}
+            </pre>
+          )}
         </Col>
       </Row>
     </Container>

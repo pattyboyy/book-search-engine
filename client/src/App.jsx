@@ -1,42 +1,41 @@
 import React from 'react';
-import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import SearchBooks from './pages/SearchBooks';
-import SavedBooks from './pages/SavedBooks';
+import { Outlet } from 'react-router-dom';
+import { ApolloProvider } from '@apollo/client';
 import Navbar from './components/Navbar';
+import client from './apolloClient';
+import ErrorPage from './pages/ErrorPage';
 
-const httpLink = createHttpLink({
-  uri: '/graphql',
-});
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('id_token');
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '',
-    },
-  };
-});
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
 
-const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache(),
-});
+  componentDidCatch(error, errorInfo) {
+    console.error("Caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorPage error={this.state.error} />;
+    }
+
+    return this.props.children;
+  }
+}
 
 function App() {
   return (
-    <ApolloProvider client={client}>
-      <Router>
+    <ErrorBoundary>
+      <ApolloProvider client={client}>
         <Navbar />
-        <Routes>
-          <Route path="/" element={<SearchBooks />} />
-          <Route path="/saved" element={<SavedBooks />} />
-          <Route path="*" element={<h1 className='display-2'>Wrong page!</h1>} />
-        </Routes>
-      </Router>
-    </ApolloProvider>
+        <Outlet />
+      </ApolloProvider>
+    </ErrorBoundary>
   );
 }
 

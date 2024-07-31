@@ -1,0 +1,61 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+  }
+  
+  .container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+  }
+  
+  .btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+  }
+  
+  .card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  /* Add these styles to your index.css or App.css */
+  .navbar {
+    padding: 1rem 0;
+  }
+  
+  .navbar-dark .navbar-nav .nav-link {
+    color: rgba(255,255,255,.75);
+  }
+  
+  .navbar-dark .navbar-nav .nav-link:hover,
+  .navbar-dark .navbar-nav .nav-link:focus {
+    color: rgba(255,255,255,1);
+  }
+  
+  .navbar-dark .navbar-brand {
+    color: #ffffff;
+  }
+  .form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  }
+
+  

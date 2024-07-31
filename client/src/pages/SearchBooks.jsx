@@ -9,6 +9,7 @@ import {
 } from 'react-bootstrap';
 
 import Auth from '../utils/auth';
+import { saveBook, searchGoogleBooks } from '../utils/API';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import { useMutation } from '@apollo/client';
 import { SAVE_BOOK } from '../utils/mutations';
@@ -22,13 +23,12 @@ const SearchBooks = () => {
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
+  const [saveBook, { error }] = useMutation(SAVE_BOOK);
+
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
   });
-
-  // set up useMutation hook for saving book
-  const [saveBook, { error }] = useMutation(SAVE_BOOK);
 
   // create method to search for books and set state on form submit
   const handleFormSubmit = async (event) => {
@@ -39,9 +39,7 @@ const SearchBooks = () => {
     }
 
     try {
-      const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${searchInput}`
-      );
+      const response = await searchGoogleBooks(searchInput);
 
       if (!response.ok) {
         throw new Error('something went wrong!');
@@ -110,7 +108,7 @@ const SearchBooks = () => {
                 />
               </Col>
               <Col xs={12} md={4}>
-                <Button type='submit' variant='success' size='lg'>
+                <Button type='submit' variant='success' size='lg' className="w-100">
                   Submit Search
                 </Button>
               </Col>
@@ -129,24 +127,26 @@ const SearchBooks = () => {
           {searchedBooks.map((book) => {
             return (
               <Col md="4" key={book.bookId}>
-                <Card border='dark'>
+                <Card border='dark' className="h-100 mb-4">
                   {book.image ? (
                     <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
                   ) : null}
-                  <Card.Body>
+                  <Card.Body className="d-flex flex-column">
                     <Card.Title>{book.title}</Card.Title>
                     <p className='small'>Authors: {book.authors.join(', ')}</p>
                     <Card.Text>{book.description}</Card.Text>
-                    {Auth.loggedIn() && (
-                      <Button
-                        disabled={savedBookIds?.some((savedBookId) => savedBookId === book.bookId)}
-                        className='btn-block btn-info'
-                        onClick={() => handleSaveBook(book.bookId)}>
-                        {savedBookIds?.some((savedBookId) => savedBookId === book.bookId)
-                          ? 'This book has already been saved!'
-                          : 'Save this Book!'}
-                      </Button>
-                    )}
+                    <div className="mt-auto">
+                      {Auth.loggedIn() && (
+                        <Button
+                          disabled={savedBookIds?.some((savedBookId) => savedBookId === book.bookId)}
+                          className='btn-block btn-info w-100'
+                          onClick={() => handleSaveBook(book.bookId)}>
+                          {savedBookIds?.some((savedBookId) => savedBookId === book.bookId)
+                            ? 'This book has already been saved!'
+                            : 'Save this Book!'}
+                        </Button>
+                      )}
+                    </div>
                   </Card.Body>
                 </Card>
               </Col>

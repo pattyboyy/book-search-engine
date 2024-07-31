@@ -1,52 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Col,
   Form,
   Button,
   Card,
-  Row
+  Row,
+  Alert
 } from 'react-bootstrap';
-
 import Auth from '../utils/auth';
-import { saveBook, searchGoogleBooks } from '../utils/API';
+import { searchGoogleBooks } from '../utils/API';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import { useMutation } from '@apollo/client';
 import { SAVE_BOOK } from '../utils/mutations';
 
 const SearchBooks = () => {
-  // create state for holding returned google api data
   const [searchedBooks, setSearchedBooks] = useState([]);
-  // create state for holding our search field data
   const [searchInput, setSearchInput] = useState('');
-
-  // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
-
   const [saveBook, { error }] = useMutation(SAVE_BOOK);
+  const [searchError, setSearchError] = useState('');
 
-  // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
-  });
+  }, [savedBookIds]);
 
-  // create method to search for books and set state on form submit
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-
-    if (!searchInput) {
-      return false;
-    }
+    if (!searchInput) return;
 
     try {
       const response = await searchGoogleBooks(searchInput);
-
       if (!response.ok) {
-        throw new Error('something went wrong!');
+        throw new Error('Failed to fetch books');
       }
 
       const { items } = await response.json();
-
       const bookData = items.map((book) => ({
         bookId: book.id,
         authors: book.volumeInfo.authors || ['No author to display'],
@@ -57,38 +46,31 @@ const SearchBooks = () => {
 
       setSearchedBooks(bookData);
       setSearchInput('');
+      setSearchError('');
     } catch (err) {
-      console.error(err);
+      console.error('Search error:', err);
+      setSearchError('An error occurred while searching for books. Please try again.');
     }
   };
 
-  // create function to handle saving a book to our database
-  const handleSaveBook = async (bookId) => {
-    // find the book in `searchedBooks` state by the matching id
+  const handleSaveBook = useCallback(async (bookId) => {
     const bookToSave = searchedBooks.find((book) => book.bookId === bookId);
-
-    // get token
     const token = Auth.loggedIn() ? Auth.getToken() : null;
 
-    if (!token) {
-      return false;
-    }
+    if (!token) return false;
 
     try {
       const { data } = await saveBook({
         variables: { bookData: { ...bookToSave } },
       });
 
-      if (error) {
-        throw new Error('something went wrong!');
+      if (data) {
+        setSavedBookIds((prevIds) => [...prevIds, bookToSave.bookId]);
       }
-
-      // if book successfully saves to user's account, save book id to state
-      setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     } catch (err) {
-      console.error(err);
+      console.error('Save book error:', err);
     }
-  };
+  }, [searchedBooks, saveBook]);
 
   return (
     <>
@@ -118,40 +100,39 @@ const SearchBooks = () => {
       </div>
 
       <Container>
+        {searchError && <Alert variant="danger">{searchError}</Alert>}
         <h2 className='pt-5'>
           {searchedBooks.length
             ? `Viewing ${searchedBooks.length} results:`
             : 'Search for a book to begin'}
         </h2>
         <Row>
-          {searchedBooks.map((book) => {
-            return (
-              <Col md="4" key={book.bookId}>
-                <Card border='dark' className="h-100 mb-4">
-                  {book.image ? (
-                    <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
-                  ) : null}
-                  <Card.Body className="d-flex flex-column">
-                    <Card.Title>{book.title}</Card.Title>
-                    <p className='small'>Authors: {book.authors.join(', ')}</p>
-                    <Card.Text>{book.description}</Card.Text>
-                    <div className="mt-auto">
-                      {Auth.loggedIn() && (
-                        <Button
-                          disabled={savedBookIds?.some((savedBookId) => savedBookId === book.bookId)}
-                          className='btn-block btn-info w-100'
-                          onClick={() => handleSaveBook(book.bookId)}>
-                          {savedBookIds?.some((savedBookId) => savedBookId === book.bookId)
-                            ? 'This book has already been saved!'
-                            : 'Save this Book!'}
-                        </Button>
-                      )}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
+          {searchedBooks.map((book) => (
+            <Col md="4" key={book.bookId}>
+              <Card border='dark' className="h-100 mb-4">
+                {book.image && (
+                  <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
+                )}
+                <Card.Body className="d-flex flex-column">
+                  <Card.Title>{book.title}</Card.Title>
+                  <p className='small'>Authors: {book.authors.join(', ')}</p>
+                  <Card.Text>{book.description}</Card.Text>
+                  <div className="mt-auto">
+                    {Auth.loggedIn() && (
+                      <Button
+                        disabled={savedBookIds?.includes(book.bookId)}
+                        className='btn-block btn-info w-100'
+                        onClick={() => handleSaveBook(book.bookId)}>
+                        {savedBookIds?.includes(book.bookId)
+                          ? 'This book has already been saved!'
+                          : 'Save this Book!'}
+                      </Button>
+                    )}
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
         </Row>
       </Container>
     </>
